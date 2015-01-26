@@ -104,26 +104,6 @@ class ArduinoReadSerial:
          metric.values = [reduce(lambda x, y: x + y,value) / len(value)]
          metric.dispatch()       
 
-##== Our Own Functions go here: ==#
-#def configer(ObjConfiguration):
-#   collectd.debug('Configuring Stuff') 
-#
-#def initer():
-#    collectd.debug('initing stuff')
-#
-#def reader(input_data=None):
-#    while 1:
-#       serialline = arduino.ser.readline().strip().split(' ')
-#       if serialline[0] == 'OK':
-#          break
-##    collectd.info('arduino serial' + str(arduino.ser.readline().strip().split(' ')))
-#    metric = collectd.Values();
-#    metric.plugin = 'python_plugin_test'
-#    metric.type = 'gauge'
-#    metric.values = [100]
-#    metric.host = 'OverwritenHostname'
-#    metric.dispatch()
-
 dataToGet = { 'tension': 3 }
 arduino = ArduinoReadSerial(dataToGet)
 #== Hook Callbacks, Order is important! ==#
