@@ -5,7 +5,7 @@ import serial
 import os
 
 class ArduinoReadSerial:
-   def __init__(self,dataToGet):
+   def __init__(self,dataToGet,shift=2):
       self.plugin_name = 'arduino'
       self.speed = 57600
       self.device = '/dev/ttyUSB0'
@@ -14,10 +14,11 @@ class ArduinoReadSerial:
       self.timeout = 1
       self.plugin_instance = None
       self.dataToGet = dataToGet
+      self.shift = shift
 
    def config(self, obj):
       for child in obj.children:
-         if child.key == 'Debug' and child.values[0] == 'true':
+         if child.key == 'Debug' and child.values[0] == True:
             self.debug = True
          elif child.key == 'SerialDevice':
             self.device = child.values[0]
@@ -78,6 +79,9 @@ class ArduinoReadSerial:
             continue
          if not lineSplitted[0] == 'OK':
             continue
+         if not lineSplittedSize >= self.shift:
+            continue
+         lineSplitted = lineSplitted[self.shift:]
          for key in self.dataToGet.keys():
             position = self.dataToGet[key]
             if not lineSplittedSize >= position:
@@ -104,7 +108,7 @@ class ArduinoReadSerial:
          metric.values = [reduce(lambda x, y: x + y,value) / len(value)]
          metric.dispatch()       
 
-dataToGet = { 'tension': 3 }
+dataToGet = { 'tension': 1 }
 arduino = ArduinoReadSerial(dataToGet)
 #== Hook Callbacks, Order is important! ==#
 collectd.register_config(arduino.config,name=arduino.plugin_name)
