@@ -53,13 +53,14 @@ class ArduinoReadSerial:
          except:
             self.log_warning('error on the serial device %s with the speed %d' %
                 (self.device, self.speed))
+	    return False
 
       if not self.ser.isOpen():
          self.ser.open()
          self.log_debug('ArduinoSerial: serial connection is ok')
       self.log_debug('serial already opened')
       self.ser.nonblocking()
- 
+      return True
 
    def isLineOK(self,line):
       lineSize = len(line)
@@ -72,7 +73,8 @@ class ArduinoReadSerial:
       return True
 
    def read_serial(self):
-      self.open()
+      if self.open() == False:
+	 return
       bufferInputLen = self.ser.inWaiting()
       if bufferInputLen == 0:
          self.log_debug('empty buffer')
@@ -93,7 +95,8 @@ class ArduinoReadSerial:
       return
 
    def read_serial_bytes(self):
-      self.open()
+      if self.open() == False:
+	 return
       bufferInputLen = self.ser.inWaiting()
       if bufferInputLen == 0:
          self.log_debug('empty buffer')
