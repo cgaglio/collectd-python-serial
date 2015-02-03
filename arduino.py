@@ -60,6 +60,17 @@ class ArduinoReadSerial:
       self.log_debug('serial already opened')
       self.ser.nonblocking()
  
+
+   def isLineOK(self,line):
+      lineSize = len(line)
+      if lineSize == 0:
+         return False
+      if not line[0] == 'OK':
+         return False
+      if not lineSize >= self.shift:
+         return False
+      return True
+
    def read_serial(self):
       self.open()
       bufferInputLen = self.ser.inWaiting()
@@ -70,30 +81,51 @@ class ArduinoReadSerial:
       values = {}
       byteRead = self.ser.read(bufferInputLen)
       for line in byteRead.split('\n'): 
-         self.log_debug(line.replace('\0',''))
+         line = line.replace('\0','')
+         self.log_debug(line)
          if len(line) == 0:
             continue
          lineSplitted = filter(None,line.strip().split(' '))
-         lineSplittedSize = len(lineSplitted)
-         if lineSplittedSize == 0:
+         if not self.isLineOK(lineSplitted):
             continue
-         if not lineSplitted[0] == 'OK':
-            continue
-         if not lineSplittedSize >= self.shift:
-            continue
-         lineSplitted = lineSplitted[self.shift:]
-         for key in self.dataToGet.keys():
-            position = self.dataToGet[key]
-            if not lineSplittedSize >= position:
-               continue
-            self.add_values(values,key,lineSplitted[position - 1])
+         self.add_values(lineSplitted,values)
       self.dispatch(values)
       return
 
-   def add_values(self,values,key,value):
-      if not key in values:
-         values[key] = []
-      values[key].append(int(value))
+   def read_serial_bytes(self):
+      self.open()
+      bufferInputLen = self.ser.inWaiting()
+      if bufferInputLen == 0:
+         self.log_debug('empty buffer')
+         return
+      self.log_debug('read serial launched : %d bytes waiting in buffer' % self.ser.inWaiting())
+      values = {}
+      byteRead = self.ser.read(bufferInputLen)
+      for line in byteRead.split('\n'): 
+         line = line.replace('\0','')
+         self.log_debug(line)
+         if len(line) == 0:
+            continue
+         lineSplitted = filter(None,line.strip().split(' '))
+         if not self.isLineOK(lineSplitted):
+            continue
+         bytesLine = bytearray(map(lambda x: int(x),lineSplitted[self.shift:]))
+         line = str(bytesLine).replace('\0','')
+         lineSplitted = line.split()
+         self.log_debug(line)
+         self.add_values(lineSplitted,values)
+      self.dispatch(values)
+      return
+
+   def add_values(self,lineSplitted,values):
+      lineSplittedSize = len(lineSplitted)
+      for key in self.dataToGet.keys():
+         position = self.dataToGet[key]
+         if not lineSplittedSize >= position:
+            continue
+         if not key in values:
+            values[key] = []
+         values[key].append(int(lineSplitted[position - 1]))
 
    def dispatch(self,values):
       for key,value in values.iteritems():
@@ -108,10 +140,10 @@ class ArduinoReadSerial:
          metric.values = [reduce(lambda x, y: x + y,value) / len(value)]
          metric.dispatch()       
 
-dataToGet = { 'tension': 1 }
+dataToGet = { 'debug': 2,'tension':4 }
 arduino = ArduinoReadSerial(dataToGet)
 #== Hook Callbacks, Order is important! ==#
 collectd.register_config(arduino.config,name=arduino.plugin_name)
 collectd.register_init(arduino.init)
-collectd.register_read(arduino.read_serial)
+collectd.register_read(arduino.read_serial_bytes)
 
