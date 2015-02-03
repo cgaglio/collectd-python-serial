@@ -71,18 +71,23 @@ class ArduinoReadSerial:
       if not lineSize >= self.shift:
          return False
       return True
-
-   def read_serial(self):
+    
+   def openAndFirstCheck(self):
       if self.open() == False:
-	 return
+	 return False
       bufferInputLen = self.ser.inWaiting()
       if bufferInputLen == 0:
          self.log_debug('empty buffer')
-         return
+         return False
       self.log_debug('read serial launched : %d bytes waiting in buffer' % self.ser.inWaiting())
-      values = {}
-      byteRead = self.ser.read(bufferInputLen)
-      for line in byteRead.split('\n'): 
+      return self.ser.read(bufferInputLen)
+    
+   def getFormattedLine(self):
+      lines = []
+      serial_buffer = self.openAndFirstCheck()
+      if(serial_buffer == False):
+	 return lines
+      for line in serial_buffer.split('\n'): 
          line = line.replace('\0','')
          self.log_debug(line)
          if len(line) == 0:
@@ -90,29 +95,24 @@ class ArduinoReadSerial:
          lineSplitted = filter(None,line.strip().split(' '))
          if not self.isLineOK(lineSplitted):
             continue
+	 lines.append(lineSplitted)
+      return lines
+
+   def read_serial(self):
+      values = {}
+      for lineSplitted in self.getFormattedLine(): 
          self.add_values(lineSplitted,values)
       self.dispatch(values)
       return
 
    def read_serial_bytes(self):
-      if self.open() == False:
-	 return
-      bufferInputLen = self.ser.inWaiting()
-      if bufferInputLen == 0:
-         self.log_debug('empty buffer')
-         return
-      self.log_debug('read serial launched : %d bytes waiting in buffer' % self.ser.inWaiting())
       values = {}
-      byteRead = self.ser.read(bufferInputLen)
-      for line in byteRead.split('\n'): 
-         line = line.replace('\0','')
-         self.log_debug(line)
-         if len(line) == 0:
-            continue
-         lineSplitted = filter(None,line.strip().split(' '))
-         if not self.isLineOK(lineSplitted):
-            continue
-         bytesLine = bytearray(map(lambda x: int(x),lineSplitted[self.shift:]))
+      for lineSplitted in self.getFormattedLine():
+	 try:
+	    bytesLine = bytearray(map(lambda x: int(x),lineSplitted[self.shift:]))
+	 except ValueError as ve:
+	    self.log_warning(str(ve))
+	    continue
          line = str(bytesLine).replace('\0','')
          lineSplitted = line.split()
          self.log_debug(line)
