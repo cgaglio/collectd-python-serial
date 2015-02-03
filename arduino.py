@@ -128,7 +128,10 @@ class ArduinoReadSerial:
             continue
          if not key in values:
             values[key] = []
-         values[key].append(int(lineSplitted[position - 1]))
+         try:
+            values[key].append(int(lineSplitted[position - 1]))
+         except ValueError as ve:
+            self.log_warning(str(ve))
 
    def dispatch(self,values):
       for key,value in values.iteritems():
