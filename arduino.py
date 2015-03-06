@@ -146,10 +146,10 @@ class ArduinoReadSerial:
          metric.values = [reduce(lambda x, y: x + y,value) / len(value)]
          metric.dispatch()       
 
-dataToGet = { 'debug': 2,'tension':4 }
+dataToGet = { 'Puissance apparente':2, 'Heures Creuses':3, 'Heures pleines':4, 'tension':5 }
 arduino = ArduinoReadSerial(dataToGet)
 #== Hook Callbacks, Order is important! ==#
 collectd.register_config(arduino.config,name=arduino.plugin_name)
 collectd.register_init(arduino.init)
-collectd.register_read(arduino.read_serial_bytes)
+collectd.register_read(arduino.read_serial_bytes,interval=30)
 
