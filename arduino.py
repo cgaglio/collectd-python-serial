@@ -15,6 +15,7 @@ class ArduinoReadSerial:
       self.plugin_instance = None
       self.dataToGet = dataToGet
       self.shift = shift
+      self.lastValues = {}
 
    def config(self, obj):
       for child in obj.children:
@@ -58,7 +59,6 @@ class ArduinoReadSerial:
       if not self.ser.isOpen():
          self.ser.open()
          self.log_debug('ArduinoSerial: serial connection is ok')
-      self.log_debug('serial already opened')
       self.ser.nonblocking()
       return True
 
@@ -117,6 +117,10 @@ class ArduinoReadSerial:
          lineSplitted = line.split()
          self.log_debug(line)
          self.add_values(lineSplitted,values)
+      if len(values) == 0:
+         values = self.lastValues
+      else:
+         self.lastValues = values
       self.dispatch(values)
       return
 
@@ -134,6 +138,7 @@ class ArduinoReadSerial:
             self.log_warning(str(ve))
 
    def dispatch(self,values):
+      self.lastValues = values
       for key,value in values.iteritems():
          if len(value) == 0:
             return
@@ -151,5 +156,5 @@ arduino = ArduinoReadSerial(dataToGet)
 #== Hook Callbacks, Order is important! ==#
 collectd.register_config(arduino.config,name=arduino.plugin_name)
 collectd.register_init(arduino.init)
-collectd.register_read(arduino.read_serial_bytes,interval=30)
+collectd.register_read(arduino.read_serial_bytes)
 
