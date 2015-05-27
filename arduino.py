@@ -8,7 +8,7 @@ class ArduinoReadSerial:
    def __init__(self,dataToGet,shift=2):
       self.plugin_name = 'arduino'
       self.speed = 57600
-      self.device = '/dev/ttyUSB0'
+      self.device = '/dev/ttyUSB1'
       self.ser = None
       self.debug = False
       self.timeout = 1
@@ -98,13 +98,6 @@ class ArduinoReadSerial:
 	 lines.append(lineSplitted)
       return lines
 
-   def read_serial(self):
-      values = {}
-      for lineSplitted in self.getFormattedLine(): 
-         self.add_values(lineSplitted,values)
-      self.dispatch(values)
-      return
-
    def read_serial_bytes(self):
       values = {}
       for lineSplitted in self.getFormattedLine():
@@ -151,7 +144,7 @@ class ArduinoReadSerial:
          metric.values = [reduce(lambda x, y: x + y,value) / len(value)]
          metric.dispatch()       
 
-dataToGet = { 'Puissance apparente':2, 'Heures Creuses':3, 'Heures pleines':4, 'tension':5 }
+dataToGet = { 'Puissance apparente':2, 'Heures Creuses':3, 'Heures pleines':4, 'tension':5, 'Compteur production':7, 'RAM libre':8 }
 arduino = ArduinoReadSerial(dataToGet)
 #== Hook Callbacks, Order is important! ==#
 collectd.register_config(arduino.config,name=arduino.plugin_name)
